@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,9 +19,29 @@ namespace Runner
             result = 0;
         }
 
-        public int RunAsync()
+        public async Task<int> RunAsync()
         {
             var testAssembly = @"C:\repos\XunitInvalidCastException\Test\bin\Debug\Test.dll";
+
+            AppDomain.CurrentDomain.AssemblyResolve += delegate (object sender, ResolveEventArgs e)
+            {
+                String currentFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                AssemblyName requestedName = new AssemblyName(e.Name);
+                if (requestedName.Name == "xunit.abstractions" || requestedName.Name == "xunit.runner.utility.net452")
+                {
+                    var resolvedAssembly = Assembly.LoadFrom(Path.Combine(currentFolder, requestedName.Name + ".dll"));
+                    //Be careful of the below if condition. If you are using an older version of the dll from our dll in your package, it will load our newer version.
+                    if (resolvedAssembly.GetName().Version < requestedName.Version)
+                    {
+                        return null;
+                    }
+                    return resolvedAssembly;
+                }
+                else
+                {
+                    return null;
+                }
+            };
 
             using (var runner = AssemblyRunner.WithAppDomain(testAssembly))
             {
