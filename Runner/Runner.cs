@@ -30,17 +30,9 @@ namespace Runner
                 if (requestedName.Name == "xunit.abstractions" || requestedName.Name == "xunit.runner.utility.net452")
                 {
                     var resolvedAssembly = Assembly.LoadFrom(Path.Combine(currentFolder, requestedName.Name + ".dll"));
-                    //Be careful of the below if condition. If you are using an older version of the dll from our dll in your package, it will load our newer version.
-                    if (resolvedAssembly.GetName().Version < requestedName.Version)
-                    {
-                        return null;
-                    }
                     return resolvedAssembly;
                 }
-                else
-                {
-                    return null;
-                }
+                return null;
             };
 
             using (var runner = AssemblyRunner.WithAppDomain(testAssembly))
